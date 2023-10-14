@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="./script.js"></script>
+
+    <link rel="stylesheet" href="./style.css">
+    <title>PLACEHOLDER</title>
+</head>
+<body>
+    <div class="topbar h-16 pl-5 pr-5 bg-slate-500 flex items-center flex-row lg:px-60">
+        <div>
+            <img src="http://placekitten.com/50/50" alt="">
+        </div>
+        <div class="flex flex-row gap-5 grow justify-end uppercase text-slate-50">
+            <p class="nav-link underline underline-offset-4 cursor-pointer leaderboard-init">Leaderboard</p>
+            <p class="nav-link cursor-pointer teams-init">Teams</p>
+            <p class="nav-link cursor-pointer">Compare</p>
+        </div>
+    </div>
+    <div class="hero p-0 pt-20 pb-2 md:p-12 md:pt-20 md:pb-2">
+        <div class="outer-content rounded-md overflow-hidden lg:mx-80">
+            <div class="content shadow-lg p-2">
+                <h1 class="main-title text-slate-700 text-center text-3xl font-bold uppercase mt-4">Ranking predictions</h1>
+                <div class="fetch-results text-slate-700 text-center mt-5 grid grid-cols-6 text-sm md:text-lg">
+                    <div class="header font-bold">Rank</div>
+                    <div class="header col-span-3 font-bold">Team name</div>
+                    <div class="header font-bold">Elo</div>
+                    <div class="header font-bold">Matches</div>
+                    <hr class="col-span-6 border-slate-500 mb-3"></hr>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
