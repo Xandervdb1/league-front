@@ -220,9 +220,12 @@ const showSearchResult = (pData) => {
         var teamTitleText = document.createElement("h2");
         teamTitleText.classList.add("team-title-text");
         teamTitleText.setAttribute("data-teamid", team.team_id);
-        teamTitleText.innerHTML = team.team_name;
-        if (team.league !== "UNKNOWN") {
-            teamTitleText.innerHTML += "<span class='text-xs'> " + team.league + "</span>"
+        if (window.innerWidth > 400) {
+            if (team.league !== "UNKNOWN") {
+                teamTitleText.innerHTML += "<span class='text-xs'> " + team.league + "</span>"
+            }
+        } else {
+            teamTitleText.innerHTML = team.team_name;
         }
         teamTitleCont.append(teamTitleText);
         teamTitleCont.classList.add("team-title","col-span-4",  "flex", "items-center");
