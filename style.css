@@ -7,6 +7,11 @@
     box-shadow: 0 4px 5px -5px black;
 }
 
+.nav-logo {
+    width: 40px;
+    height: 40px;
+}
+
 .hero {
     background-image: url(./_assets/bg.jpg);
     background-position: center;
