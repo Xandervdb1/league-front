@@ -175,7 +175,7 @@ const setTeamsContent = (pData, mustWeDraw) => {
 
     container.append( inputContainer, datalist);
 
-    if (mustWeDraw === true) {
+    if (mustWeDraw === true && teamIDS.length > 0) {
         var teamIDsString = teamIDS.join(", ")
         fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/team_rankings?team_ids=" + teamIDsString)
         .then(response => response.json())
@@ -238,20 +238,20 @@ const showSearchResult = (pData) => {
         logoCont.append(logo);
 
         var placeholder = document.createElement("div");
-        var placeholderCol2 = placeholder.cloneNode();
-        placeholderCol2.classList.add("col-span-2");
+        var placeholderCol1 = placeholder.cloneNode();
+        placeholderCol1.classList.add("col-span-1");
 
         matchesCont = document.createElement("div");
         matchesCont.textContent = "Matches: " + team.matches;
-        matchesCont.classList.add("match-cont");
+        matchesCont.classList.add("match-cont", "col-span-2");
         matchesCont.setAttribute("data-match", team.matches)
 
         eloCont = document.createElement("div");
         eloCont.textContent = "Elo: " + team.elo;
-        eloCont.classList.add("elo-cont");
+        eloCont.classList.add("elo-cont", "col-span-2");
         eloCont.setAttribute("data-elo", team.elo)
 
-        container.append(rankingCont,logoCont, teamTitleCont, placeholderCol2, eloCont, matchesCont, placeholderCol2.cloneNode());
+        container.append(rankingCont,logoCont, teamTitleCont, placeholderCol1, eloCont, matchesCont, placeholderCol1.cloneNode());
     });
 
     if(searchedTeams.length !== 1) {
