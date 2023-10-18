@@ -60,6 +60,7 @@ input:focus {
 
 .team-logo {
     margin: auto;
+    width: 75px;
 }
 
 .team-title h2 {
@@ -67,4 +68,22 @@ input:focus {
     text-transform: uppercase;
     font-size: 1.5rem;
     line-height: 2rem;
+}
+
+.team-title h2:hover {
+    color: red;
+    text-decoration: line-through;
+    cursor: pointer;
+}
+
+.match-cont, .elo-cont {
+    margin: 0.5rem;
+    border-radius: 1rem;
+}
+
+.search-icon {
+    padding: 0.5rem;
+    background-color: #64748B;
+    border-radius: 2rem;
+    cursor: pointer;
 }

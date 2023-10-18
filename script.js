@@ -1,9 +1,19 @@
 let rankingData = null;
 let teamsData = null;
+let searchedTeams;
 
 let rankingCount = 20;
 const container = document.querySelector(".fetch-results");
 const mainTitle = document.querySelector(".main-title");
+
+let teamIDS = [];
+let slugs = {};
+
+// Source: https://gist.github.com/mlocati/7210513
+function perc2color(percentage, maxHue = 120, minHue = 0) {
+    const hue = percentage * (maxHue - minHue) + minHue;
+    return `hsl(${hue}, 100%, 50%)`;
+}
 
 const removeChildren = (pNode, pCaller) => {
     switch(pCaller) {
@@ -18,7 +28,7 @@ const removeChildren = (pNode, pCaller) => {
             }
             break;
         case "teams-search":
-            while (pNode.children.length !== 4) {
+            while (pNode.children.length !== 2) {
                 pNode.removeChild(pNode.lastChild);
             }
     }
@@ -38,7 +48,7 @@ const rankingInit = async () => {
     }
 }
 
-const teamsInit = (pEvent) => {
+const teamsInit = (pEvent, deletedTeam = false) => {
     if (teamsData === null) {
         fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/teams")
         .then(response => response.json())
@@ -46,10 +56,10 @@ const teamsInit = (pEvent) => {
             teamsData = data;
             teamsData.sort(compare)
             console.log(data)
-            setTeamsContent(teamsData);
+            setTeamsContent(teamsData, deletedTeam);
         })
     } else {
-        setTeamsContent(teamsData);
+        setTeamsContent(teamsData, deletedTeam);
     }
 }
 
@@ -89,7 +99,11 @@ const setRankingContent = (pData) => {
         rank.classList.add("fetch-data")
         var name = document.createElement("div");
         name.classList.add("col-span-3", "fetch-data", "fetch-data-name");
-        name.innerHTML = "<span class='text-xs'>[" + team.league + "]</span> " + team.team_name;
+        if (window.innerWidth > 400) {
+            name.innerHTML = "<span class='text-xs'>[" + team.league + "]</span> " + team.team_name;
+        } else {
+            name.textContent = team.team_name;
+        }
         var elo = document.createElement("div");
         elo.textContent = team.elo;
         elo.classList.add("fetch-data")
@@ -97,7 +111,7 @@ const setRankingContent = (pData) => {
         matches.textContent = team.matches;
         matches.classList.add("fetch-data")
         var hr = document.createElement("hr");
-        hr.classList.add("border-slate-200", "col-span-6");
+        hr.classList.add("border-slate-200", "col-span-6", "my-2");
         
         container.append(rank, name, elo, matches, hr)
     });
@@ -108,15 +122,21 @@ const setRankingContent = (pData) => {
     container.append(loadMore);
 }
 
-const setTeamsContent = (pData) => {
+const setTeamsContent = (pData, mustWeDraw) => {
     removeChildren(container, "teams");
-    mainTitle.textContent = "Search for a team";
-    var filler = document.createElement("div");
-    filler.classList.add("col-span-2");
+    mainTitle.textContent = "Compare teams";
+    var inputContainer = document.createElement("div");
+    inputContainer.classList.add("mx-20", "col-span-6", "flex", "items-center", "gap-2")
     var input = document.createElement("input");
-    input.classList.add("col-span-2", "p-2", "text-center", "rounded-full", "bg-slate-50","text-slate-700");
+    input.classList.add( "w-full","p-2", "text-center", "rounded-full", "bg-slate-50","text-slate-700");
     input.setAttribute("type", "text");
     input.setAttribute("list", "teams");
+    input.setAttribute("placeholder", "Search for a team...");
+    var searchIcon = document.createElement("span");
+    searchIcon.classList.add("search-icon");
+    searchIcon.innerHTML = '<svg stroke="white" fill="white" stroke-width="0" viewBox="0 0 24 24" height="30px" width="30px" xmlns="http://www.w3.org/2000/svg"><path d="M10,18c1.846,0,3.543-0.635,4.897-1.688l4.396,4.396l1.414-1.414l-4.396-4.396C17.365,13.543,18,11.846,18,10 c0-4.411-3.589-8-8-8s-8,3.589-8,8S5.589,18,10,18z M10,4c3.309,0,6,2.691,6,6s-2.691,6-6,6s-6-2.691-6-6S6.691,4,10,4z"></path></svg>'
+    inputContainer.append(input, searchIcon);
+
     var datalist = document.createElement("datalist");
     datalist.setAttribute("id", "teams");
     pData.forEach(function (team) {
@@ -134,11 +154,14 @@ const setTeamsContent = (pData) => {
         for (var child in datalist.children) {
             if (searchVal === datalist.children[child].textContent) {
                 var teamID = datalist.children[child].getAttribute("data");
+                teamIDS.push(teamID);
+                var teamIDsString = teamIDS.join(", ")
                 var slug = datalist.children[child].getAttribute("data-slug");
-                fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/team_rankings?team_ids=" + teamID)
+                slugs[teamID] = slug;
+                fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/team_rankings?team_ids=" + teamIDsString)
                 .then(response => response.json())
                 .then(data =>  {
-                    showSearchResult(data[0], slug);
+                    showSearchResult(data);
                 })
             }
         }
@@ -148,30 +171,119 @@ const setTeamsContent = (pData) => {
         if(e.key === "Enter") {
             input.blur();
         }
-    })
+    });
 
-    container.append(filler, input, filler.cloneNode(), datalist);
+    container.append( inputContainer, datalist);
+
+    if (mustWeDraw === true) {
+        var teamIDsString = teamIDS.join(", ")
+        fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/team_rankings?team_ids=" + teamIDsString)
+        .then(response => response.json())
+        .then(data =>  {
+            showSearchResult(data);
+        })
+    }
 }
 
-const showSearchResult = (pData, pSlug) => {
-    console.log(pData);
-    removeChildren(container, "teams-search")
-    var logoCont = document.createElement("div");
-    var logo = document.createElement("img");
-    logo.addEventListener("error", function() {
-        logo.src = "./_assets/teams-fallback.png"
-    });
-    logo.src = "https://github.com/lootmarket/esport-team-logos/blob/master/league-of-legends/" + pSlug + "/" + pSlug + "-logo.png?raw=true";
-    logoCont.classList.add("col-span-1", "p-2");
-    logo.classList.add("team-logo");
-    logoCont.append(logo)
+const showSearchResult = (pData) => {
+    searchedTeams = pData;
+    let maxElo = -1;
+    let minElo;
+    let maxMatches = -1;
+    let minMatches;
+    removeChildren(container, "teams-search");
 
-    var teamTitleCont = document.createElement("div");
-    var teamTitleText = document.createElement("h2");
-    teamTitleText.textContent = pData.team_name;
-    teamTitleCont.append(teamTitleText);
-    teamTitleCont.classList.add("team-title","col-span-5", "mt-5",  "flex", "items-center");
-    container.append(logoCont, teamTitleCont)
+    pData.forEach(function(team, index) {
+        if (minElo === undefined) {
+            minElo = team.elo;
+        } else if (minElo > team.elo) {
+            minElo = team.elo;
+        }
+
+        if (minMatches === undefined) {
+            minMatches = team.matches;
+        } else if (minMatches > team.matches) {
+            minMatches = team.matches;
+        }
+
+        if (team.elo > maxElo) {
+            maxElo = team.elo;
+        }
+        if (team.matches > maxMatches) {
+            maxMatches = team.matches;
+        }
+        var rankingCont = document.createElement("div");
+        rankingCont.classList.add("col-span-1", "text-2xl", "font-bold", "text-right", "flex", "items-center", "justify-end");
+        rankingCont.innerHTML = team.rank
+    
+        var teamTitleCont = document.createElement("div");
+        var teamTitleText = document.createElement("h2");
+        teamTitleText.classList.add("team-title-text");
+        teamTitleText.setAttribute("data-teamid", team.team_id);
+        teamTitleText.innerHTML = team.team_name;
+        if (team.league !== "UNKNOWN") {
+            teamTitleText.innerHTML += "<span class='text-xs'> " + team.league + "</span>"
+        }
+        teamTitleCont.append(teamTitleText);
+        teamTitleCont.classList.add("team-title","col-span-4",  "flex", "items-center");
+        
+        var logoCont = document.createElement("div");
+        var logo = document.createElement("img");
+        logo.addEventListener("error", function() {
+            logo.src = "./_assets/teams-fallback.png"
+        });
+        logo.src = "https://github.com/lootmarket/esport-team-logos/blob/master/league-of-legends/" + slugs[team.team_id] + "/" + slugs[team.team_id] + "-logo.png?raw=true";
+        logoCont.classList.add("col-span-1", "p-2");
+        logo.classList.add("team-logo");
+        logoCont.append(logo);
+
+        var placeholder = document.createElement("div");
+        var placeholderCol2 = placeholder.cloneNode();
+        placeholderCol2.classList.add("col-span-2");
+
+        matchesCont = document.createElement("div");
+        matchesCont.textContent = "Matches: " + team.matches;
+        matchesCont.classList.add("match-cont");
+        matchesCont.setAttribute("data-match", team.matches)
+
+        eloCont = document.createElement("div");
+        eloCont.textContent = "Elo: " + team.elo;
+        eloCont.classList.add("elo-cont");
+        eloCont.setAttribute("data-elo", team.elo)
+
+        container.append(rankingCont,logoCont, teamTitleCont, placeholderCol2, eloCont, matchesCont, placeholderCol2.cloneNode());
+    });
+
+    if(searchedTeams.length !== 1) {
+        document.querySelectorAll(".elo-cont").forEach(function(container) {
+            let elo = parseInt(container.getAttribute("data-elo"));
+            let perc = 0;
+            if (elo !== 0 && minElo !== maxElo) {
+                perc = ((elo - minElo) / (maxElo - minElo));
+            }
+    
+            container.style.backgroundColor = perc2color(perc);
+        })
+    
+        document.querySelectorAll(".match-cont").forEach(function(container) {
+            let match = parseInt(container.getAttribute("data-match"));
+            let perc = 0;
+            if (match !== 0) {
+                perc = ((match - minMatches) / (maxMatches - minMatches));
+            }
+    
+            container.style.backgroundColor = perc2color(perc);
+        })
+    }
+
+    document.querySelectorAll(".team-title-text").forEach(function(text) {
+        text.addEventListener("click", function(pEvent) {
+            var teamid = pEvent.target.getAttribute("data-teamid");
+            teamIDS = teamIDS.filter(id => id !== teamid);
+            teamsInit(pEvent, true);
+        })
+    })
+
 }
 
 document.querySelectorAll(".nav-link").forEach(function(link) {
