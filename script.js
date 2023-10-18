@@ -159,7 +159,7 @@ const showSearchResult = (pData, pSlug) => {
     var logoCont = document.createElement("div");
     var logo = document.createElement("img");
     logo.addEventListener("error", function() {
-        logo.src = "https://github.com/Xandervdb1/league-front/blob/main/_assets/teams-fallback.png?raw=true"
+        logo.src = "./_assets/teams-fallback.png"
     });
     logo.src = "https://github.com/lootmarket/esport-team-logos/blob/master/league-of-legends/" + pSlug + "/" + pSlug + "-logo.png?raw=true";
     logoCont.classList.add("col-span-1", "p-2");
