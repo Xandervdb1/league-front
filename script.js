@@ -1,5 +1,6 @@
 let rankingData = null;
 let teamsData = null;
+let tournamentsData = null;
 let searchedTeams;
 
 let rankingCount = 20;
@@ -31,6 +32,17 @@ const removeChildren = (pNode, pCaller) => {
             while (pNode.children.length !== 2) {
                 pNode.removeChild(pNode.lastChild);
             }
+            break;
+        case "tournaments": 
+            while (pNode.children.length !== 0) {
+                pNode.removeChild(pNode.lastChild);
+            }
+            break;
+        case "tournament-search":
+            while (pNode.children.length !== 2) {
+                pNode.removeChild(pNode.lastChild);
+            }
+            break;
     }
 }
 
@@ -40,7 +52,6 @@ const rankingInit = async () => {
         .then(response => response.json())
         .then(data => {
             rankingData = data;
-            console.log(data)
             setRankingContent(rankingData);
         })
     } else {
@@ -55,11 +66,24 @@ const teamsInit = (pEvent, deletedTeam = false) => {
         .then(data => {
             teamsData = data;
             teamsData.sort(compare)
-            console.log(data)
             setTeamsContent(teamsData, deletedTeam);
         })
     } else {
         setTeamsContent(teamsData, deletedTeam);
+    }
+}
+
+const tournamentsInit = () => {
+    if (tournamentsData === null) {
+        fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/tournaments")
+        .then(response => response.json())
+        .then(data => {
+            tournamentsData = data;
+            tournamentsData.sort(compare)
+            setTournamentsContent(tournamentsData);
+        })
+    } else {
+        setTournamentsContent(tournamentsData);
     }
 }
 
@@ -83,64 +107,80 @@ const loadMoreRanking = () => {
     })
 }
 
-const setRankingContent = (pData) => {
-    if (container.children > 1) {
-        removeChildren(container, "ranking");
+const setRankingContent = (pData, fromTournament = false) => {
+    if (fromTournament === false) {
+        if (container.children > 1) {
+            removeChildren(container, "ranking");
+        }
+        container.innerHTML = '<div class="header font-bold">Rank</div>' +
+        '<div class="header col-span-3 font-bold">Team name</div>' +
+        '<div class="header font-bold">Elo</div>' +
+        '<div class="header font-bold">Matches</div>' + 
+        '<hr class="col-span-6 border-slate-500 mb-3"></hr>';
+        mainTitle.textContent = "Ranking predictions";
+    } else {
+        removeChildren(container, "tournament-search");
+        container.insertAdjacentHTML("beforeend", '<div class="header mt-4 font-bold">Rank</div>' +
+        '<div class="header mt-4 col-span-3 font-bold">Team name</div>' +
+        '<div class="header mt-4 font-bold">Elo</div>' +
+        '<div class="header mt-4 font-bold">Matches</div>' + 
+        '<hr class="col-span-6 border-slate-500 mb-3"></hr>');
+        mainTitle.textContent = "Tournaments: " + fromTournament;
     }
-    container.innerHTML = '<div class="header font-bold">Rank</div>' +
-    '<div class="header col-span-3 font-bold">Team name</div>' +
-    '<div class="header font-bold">Elo</div>' +
-    '<div class="header font-bold">Matches</div>' + 
-    '<hr class="col-span-6 border-slate-500 mb-3"></hr>';
-    mainTitle.textContent = "Ranking predictions";
     pData.forEach(function (team) {
-        var rank = document.createElement("div");
+        const rank = document.createElement("div");
         rank.textContent = team.rank;
         rank.classList.add("fetch-data")
-        var name = document.createElement("div");
+        const name = document.createElement("div");
         name.classList.add("col-span-3", "fetch-data", "fetch-data-name");
         if (window.innerWidth > 400) {
-            name.innerHTML = "<span class='text-xs'>[" + team.league + "]</span> " + team.team_name;
+            if (team.league !== "UNKNOWN") {
+                name.innerHTML = "<span class='text-xs'>[" + team.league + "]</span> " + team.team_name;
+            } else {
+                name.textContent = team.team_name;
+            }
         } else {
             name.textContent = team.team_name;
         }
-        var elo = document.createElement("div");
+        const elo = document.createElement("div");
         elo.textContent = team.elo;
         elo.classList.add("fetch-data")
-        var matches = document.createElement("div");
+        const matches = document.createElement("div");
         matches.textContent = team.matches;
         matches.classList.add("fetch-data")
-        var hr = document.createElement("hr");
+        const hr = document.createElement("hr");
         hr.classList.add("border-slate-200", "col-span-6", "my-2");
         
         container.append(rank, name, elo, matches, hr)
     });
-    var loadMore = document.createElement("div");
-    loadMore.classList.add("underline", "col-span-6", "cursor-pointer", "font-bold", "my-4");
-    loadMore.textContent = "Load more";
-    loadMore.addEventListener("click", loadMoreRanking);
-    container.append(loadMore);
+    if (fromTournament === false) {
+        const loadMore = document.createElement("div");
+        loadMore.classList.add("underline", "col-span-6", "cursor-pointer", "font-bold", "my-4");
+        loadMore.textContent = "Load more";
+        loadMore.addEventListener("click", loadMoreRanking);
+        container.append(loadMore);
+    }
 }
 
 const setTeamsContent = (pData, mustWeDraw) => {
     removeChildren(container, "teams");
     mainTitle.textContent = "Compare teams";
-    var inputContainer = document.createElement("div");
+    const inputContainer = document.createElement("div");
     inputContainer.classList.add("mx-20", "col-span-6", "flex", "items-center", "gap-2")
-    var input = document.createElement("input");
+    const input = document.createElement("input");
     input.classList.add( "w-full","p-2", "text-center", "rounded-full", "bg-slate-50","text-slate-700");
     input.setAttribute("type", "text");
     input.setAttribute("list", "teams");
     input.setAttribute("placeholder", "Search for a team...");
-    var searchIcon = document.createElement("span");
+    const searchIcon = document.createElement("span");
     searchIcon.classList.add("search-icon");
     searchIcon.innerHTML = '<svg stroke="white" fill="white" stroke-width="0" viewBox="0 0 24 24" height="20px" width="20px" xmlns="http://www.w3.org/2000/svg"><path d="M10,18c1.846,0,3.543-0.635,4.897-1.688l4.396,4.396l1.414-1.414l-4.396-4.396C17.365,13.543,18,11.846,18,10 c0-4.411-3.589-8-8-8s-8,3.589-8,8S5.589,18,10,18z M10,4c3.309,0,6,2.691,6,6s-2.691,6-6,6s-6-2.691-6-6S6.691,4,10,4z"></path></svg>'
     inputContainer.append(input, searchIcon);
 
-    var datalist = document.createElement("datalist");
+    const datalist = document.createElement("datalist");
     datalist.setAttribute("id", "teams");
     pData.forEach(function (team) {
-        var option = document.createElement("option");
+        const option = document.createElement("option");
         option.setAttribute("data", team.team_id);
         option.setAttribute("data-slug", team.slug);
         option.textContent = "[" + team.acronym + "] " + team.name;
@@ -148,15 +188,15 @@ const setTeamsContent = (pData, mustWeDraw) => {
     });
 
     input.addEventListener("blur", (e) => {
-        var searchVal = e.target.value;
+        const searchVal = e.target.value;
         e.target.value = "";
-        var datalist = document.querySelector("datalist");
-        for (var child in datalist.children) {
+        const datalist = document.querySelector("datalist");
+        for (let child in datalist.children) {
             if (searchVal === datalist.children[child].textContent) {
-                var teamID = datalist.children[child].getAttribute("data");
+                const teamID = datalist.children[child].getAttribute("data");
                 teamIDS.push(teamID);
-                var teamIDsString = teamIDS.join(", ")
-                var slug = datalist.children[child].getAttribute("data-slug");
+                const teamIDsString = teamIDS.join(", ")
+                const slug = datalist.children[child].getAttribute("data-slug");
                 slugs[teamID] = slug;
                 fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/team_rankings?team_ids=" + teamIDsString)
                 .then(response => response.json())
@@ -176,7 +216,7 @@ const setTeamsContent = (pData, mustWeDraw) => {
     container.append( inputContainer, datalist);
 
     if (mustWeDraw === true && teamIDS.length > 0) {
-        var teamIDsString = teamIDS.join(", ")
+        const teamIDsString = teamIDS.join(", ")
         fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/team_rankings?team_ids=" + teamIDsString)
         .then(response => response.json())
         .then(data =>  {
@@ -212,17 +252,19 @@ const showSearchResult = (pData) => {
         if (team.matches > maxMatches) {
             maxMatches = team.matches;
         }
-        var rankingCont = document.createElement("div");
+        const rankingCont = document.createElement("div");
         rankingCont.classList.add("col-span-1", "text-2xl", "font-bold", "text-right", "flex", "items-center", "justify-end");
         rankingCont.innerHTML = team.rank
     
-        var teamTitleCont = document.createElement("div");
-        var teamTitleText = document.createElement("h2");
+        const teamTitleCont = document.createElement("div");
+        const teamTitleText = document.createElement("h2");
         teamTitleText.classList.add("team-title-text");
         teamTitleText.setAttribute("data-teamid", team.team_id);
         if (window.innerWidth > 400) {
             if (team.league !== "UNKNOWN") {
                 teamTitleText.innerHTML = team.team_name + "<span class='text-xs'> " + team.league + "</span>"
+            } else {
+                teamTitleText.innerHTML = team.team_name;
             }
         } else {
             teamTitleText.innerHTML = team.team_name;
@@ -230,8 +272,8 @@ const showSearchResult = (pData) => {
         teamTitleCont.append(teamTitleText);
         teamTitleCont.classList.add("team-title","col-span-4",  "flex", "items-center");
         
-        var logoCont = document.createElement("div");
-        var logo = document.createElement("img");
+        const logoCont = document.createElement("div");
+        const logo = document.createElement("img");
         logo.addEventListener("error", function() {
             logo.src = "./_assets/teams-fallback.png"
         });
@@ -240,8 +282,8 @@ const showSearchResult = (pData) => {
         logo.classList.add("team-logo");
         logoCont.append(logo);
 
-        var placeholder = document.createElement("div");
-        var placeholderCol1 = placeholder.cloneNode();
+        const placeholder = document.createElement("div");
+        const placeholderCol1 = placeholder.cloneNode();
         placeholderCol1.classList.add("col-span-1");
 
         matchesCont = document.createElement("div");
@@ -281,12 +323,67 @@ const showSearchResult = (pData) => {
 
     document.querySelectorAll(".team-title-text").forEach(function(text) {
         text.addEventListener("click", function(pEvent) {
-            var teamid = pEvent.target.getAttribute("data-teamid");
+            const teamid = pEvent.target.getAttribute("data-teamid");
             teamIDS = teamIDS.filter(id => id !== teamid);
             teamsInit(pEvent, true);
         })
     })
+}
 
+const setTournamentsContent = (pData) => {
+    removeChildren(container, "tournaments");
+    mainTitle.textContent = "Tournaments";
+
+    const inputContainer = document.createElement("div");
+    inputContainer.classList.add("mx-20", "col-span-6", "flex", "items-center", "gap-2")
+    const input = document.createElement("input");
+    input.classList.add( "w-full","p-2", "text-center", "rounded-full", "bg-slate-50","text-slate-700");
+    input.setAttribute("type", "text");
+    input.setAttribute("list", "tournaments");
+    input.setAttribute("placeholder", "Search for a tournament...");
+    const searchIcon = document.createElement("span");
+    searchIcon.classList.add("search-icon");
+    searchIcon.innerHTML = '<svg stroke="white" fill="white" stroke-width="0" viewBox="0 0 24 24" height="20px" width="20px" xmlns="http://www.w3.org/2000/svg"><path d="M10,18c1.846,0,3.543-0.635,4.897-1.688l4.396,4.396l1.414-1.414l-4.396-4.396C17.365,13.543,18,11.846,18,10 c0-4.411-3.589-8-8-8s-8,3.589-8,8S5.589,18,10,18z M10,4c3.309,0,6,2.691,6,6s-2.691,6-6,6s-6-2.691-6-6S6.691,4,10,4z"></path></svg>'
+    inputContainer.append(input, searchIcon);
+
+    const datalist = document.createElement("datalist");
+    datalist.setAttribute("id", "tournaments");
+    pData.forEach(function (tournament) {
+        const option = document.createElement("option");
+        option.setAttribute("data", tournament.id);
+        option.textContent = tournament.name;
+        datalist.append(option);
+    });
+
+    input.addEventListener("blur", (e) => {
+        const searchVal = e.target.value;
+        e.target.value = "";
+        const datalist = document.querySelector("datalist");
+        for (let child in datalist.children) {
+            if (searchVal === datalist.children[child].textContent) {
+                const tournamentID = datalist.children[child].getAttribute("data");
+                const tournamentName = datalist.children[child].textContent;
+                fetch("https://usm38g8rwj.execute-api.eu-central-1.amazonaws.com/api/tournament_rankings/" + tournamentID)
+                .then(response => response.json())
+                .then(data =>  {
+                    showTournament(data, tournamentName);
+                })
+            }
+        }
+    });
+
+    input.addEventListener("keypress", (e) => {
+        if(e.key === "Enter") {
+            input.blur();
+        }
+    });
+
+    container.append( inputContainer, datalist);
+}
+
+const showTournament = (pData, tournamentName) => {
+    console.log(pData);
+    setRankingContent(pData, tournamentName);
 }
 
 document.querySelectorAll(".nav-link").forEach(function(link) {
@@ -299,6 +396,8 @@ document.querySelectorAll(".nav-link").forEach(function(link) {
             rankingInit();
         } else if (pEvent.target.classList.contains("teams-init")) {
             teamsInit();
+        } else if (pEvent.target.classList.contains("tournament-init")) {
+            tournamentsInit();
         }
     })
 });
